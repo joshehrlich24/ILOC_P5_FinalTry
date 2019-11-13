@@ -1,0 +1,14 @@
+LT
+main:
+  push bp
+  i2i sp => bp
+  addI sp, -4 => sp                     // allocate space for local variables (4 bytes)
+  loadI 3 => r2
+  storeAI r2 => [bp-4] {a}
+  loadI 6 => r8
+  i2i r8 => ret
+  i2i bp => sp
+  pop bp
+  return
+
+Result: 6

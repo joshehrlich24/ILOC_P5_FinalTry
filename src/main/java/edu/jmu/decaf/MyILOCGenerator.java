@@ -146,12 +146,62 @@ public class MyILOCGenerator extends ILOCGenerator
     	
     	copyCode(node, node.leftChild);
     	copyCode(node, node.rightChild);
+    	
+    	getCode(node.rightChild);
+    	
+    	System.out.println(getCode(node));
    
     	switch(node.operator)
     	{
     		case ADD:
+    			
     			emit(node, ILOCInstruction.Form.ADD, leftReg, rightReg, destReg);
-    		break;
+    			break;
+    		
+    		case SUB:
+    	    	
+    			emit(node, ILOCInstruction.Form.SUB, leftReg, rightReg, destReg);
+    	    	break;
+    		
+    		case MUL:
+    			
+    			emit(node, ILOCInstruction.Form.MULT, leftReg, rightReg, destReg);
+    			break;
+        		
+    		case DIV:
+    			
+    			emit(node, ILOCInstruction.Form.DIV, leftReg, rightReg, destReg);
+    			break;
+        		
+    		case AND:
+    			
+    			emit(node, ILOCInstruction.Form.AND, leftReg, rightReg, destReg);
+    			break;
+    		
+    		case EQ:
+    			
+    			emit(node, ILOCInstruction.Form.CMP_EQ, leftReg, rightReg, destReg);
+    			break;
+		
+    		case GE:
+    			
+    			emit(node, ILOCInstruction.Form.CMP_GE, leftReg, rightReg, destReg);
+    			break;
+		
+    		case GT:
+    			
+    			emit(node, ILOCInstruction.Form.CMP_GT, leftReg, rightReg, destReg);
+    			break;
+		
+    		case LE:
+    			emit(node, ILOCInstruction.Form.CMP_LE, leftReg, rightReg, destReg);
+    	    	break;
+		
+    		case LT:
+
+    			emit(node, ILOCInstruction.Form.CMP_LT, leftReg, rightReg, destReg);
+    			//emit(node, ILOCInstruction.Form.CBR, destReg);
+    	    	break;
 		//Add other cases
     		default:
     			
@@ -162,11 +212,10 @@ public class MyILOCGenerator extends ILOCGenerator
     	setTempReg(node, destReg);
     }
     
-//    public void postVisit(ASTLocation node)
-//    {
-//    	ILOCOperand reg = ILOCOperand.newVirtualReg();
-//    	setTempReg(node, reg);
-//    }
+    public void postVisit(ASTConditional node)
+    {
+    	copyCode(node, node.condition);
+    }
     
     
 
