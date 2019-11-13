@@ -27,15 +27,16 @@ public class MyILOCGenerator extends ILOCGenerator
 
         // TODO: emit epilogue
     		
-    		 emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_BP, ILOCOperand.REG_SP);
-    	     emit(node, ILOCInstruction.Form.POP, ILOCOperand.REG_BP);
-    	     emit(node, ILOCInstruction.Form.RETURN);
+//    		 emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_BP, ILOCOperand.REG_SP);
+//    	     emit(node, ILOCInstruction.Form.POP, ILOCOperand.REG_BP);
+//    	     emit(node, ILOCInstruction.Form.RETURN);
     }
     
     public void postVisit(ASTFunctionCall node)
     {
     	int numberOfArgs = node.arguments.size();
     	int offset = numberOfArgs * 4;
+    	ILOCOperand returnReg = ILOCOperand.newVirtualReg();
     	
     	if(numberOfArgs > 0)
     	{
@@ -45,9 +46,7 @@ public class MyILOCGenerator extends ILOCGenerator
     		{
     			ILOCOperand temp = ILOCOperand.newVirtualReg();
     			temp = getTempReg(node.arguments.get(i));
-    			//System.out.println("Meow " + temp + node.arguments.get(i).toString());
     			copyCode(node, node.arguments.get(i));
-    			System.out.println("Here " + getCode(node.arguments.get(i)));
     		}
     		
     		
@@ -57,6 +56,12 @@ public class MyILOCGenerator extends ILOCGenerator
     			ILOCOperand temp = getTempReg(node.arguments.get(i));
     			emit(node, ILOCInstruction.Form.PUSH, temp);
     		}
+    		
+    		emit(node, ILOCInstruction.Form.CALL, ILOCOperand.newCallLabel(node.name));
+    		emit(node, ILOCInstruction.Form.ADD_I, ILOCOperand.REG_SP, ILOCOperand.newIntConstant(offset), ILOCOperand.REG_SP);
+    		emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_RET, returnReg);
+    		
+    		setTempReg(node, returnReg);
     		
     		
     	}
@@ -76,23 +81,22 @@ public class MyILOCGenerator extends ILOCGenerator
     {
     	if (node.hasValue()) 
     	{
-    		System.out.println("RET\n");
-    		System.out.println(node.value + " " + getTempReg(node.value));
     		copyCode(node, node.value);
-    		System.out.println(getCode(node));
     		emit(node, ILOCInstruction.Form.I2I, getTempReg(node.value), ILOCOperand.REG_RET);
     	}
     	
     	// TODO: emit epilogue
-    		emit(node, ILOCInstruction.Form.RETURN);
+    	 emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_BP, ILOCOperand.REG_SP);
+	     emit(node, ILOCInstruction.Form.POP, ILOCOperand.REG_BP);
+	     emit(node, ILOCInstruction.Form.RETURN);
     }
     
     @Override 
     public void postVisit(ASTLocation loc)
     {	
-    	ILOCOperand reg = ILOCOperand.newVirtualReg();
+    	ILOCOperand reg = emitLoad(loc);
     	setTempReg(loc, reg);	
-    	emitLoad(loc);
+    	
     }
     
     public void postVisit(ASTLiteral node)
@@ -119,7 +123,7 @@ public class MyILOCGenerator extends ILOCGenerator
     	
     	if(!node.getParent().getASTTypeStr().equals("Return"))
     	{
-    		copyCode(node.getParent(), node);		
+    		//copyCode(node.getParent(), node);		
     	}
     	
     }
@@ -127,8 +131,11 @@ public class MyILOCGenerator extends ILOCGenerator
     public void postVisit(ASTAssignment node)
     {
     	ILOCOperand reg = getTempReg(node.value); // get the value of the assignment
-    	emitStore(node, reg); 
+    	
     	setTempReg(node.value, reg);
+    	
+    	copyCode(node, node.value);
+    	emitStore(node, reg); 
     }
     
     public void postVisit(ASTBinaryExpr node)
