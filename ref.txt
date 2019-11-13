@@ -6,14 +6,15 @@ main:
   storeAI r1 => [bp-4] {a}              // a = 3
   loadAI [bp-4] => r2 {a}
   loadI 10 => r3
-  cmp_LT r2, r3 => r4
+  cmp_LE r2, r3 => r4
   cbr r4 => l1, l2
-l1:                                     // if (a<10)
-  loadI 10 => r5
-  storeAI r5 => [bp-4] {a}              // a = 10
+l1:                                     // if (a<=10)
+  loadI 14 => r5
+  neg r5 => r6
+  storeAI r6 => [bp-4] {a}              // a = (-14)
 l2:
-  loadI 6 => r6
-  i2i r6 => ret
+  loadI 6 => r7
+  i2i r7 => ret
   jump l3                               // return 6
 l3:
   i2i bp => sp                          // epilogue
