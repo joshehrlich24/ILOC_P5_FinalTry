@@ -1,13 +1,24 @@
+def int add(int x, int y)
+{
+    return x + y;
+}
 
 def int main()
 {
     int a;
     a = 3;
-    
-    if(a <= 10)
-    {
-    	a = -14;
-    }
-    
-    return 6;
+   
+   if(a < 10)
+   {
+   		a = 11;
+   }
+   else
+   {
+   		a = 14;
+   }
+
+   
+  
+   
+   return 5;
 }

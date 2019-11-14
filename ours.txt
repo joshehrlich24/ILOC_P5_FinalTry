@@ -1,23 +1,37 @@
-Assignment node --> []
-Assignment node After copy --> [  loadI 3 => r2]
-UnaryExpr child -->[  loadI 14 => r7]
-UnaryExpression node --> []
-UnaryExpression node after negation --> [  loadI 14 => r7,   neg r7 => r8]
-Assignment node --> []
-Assignment node After copy --> [  loadI 14 => r7,   neg r7 => r8]
-main:
-  push bp
+add:
+  push bp                               // Prologue
   i2i sp => bp
-  addI sp, -4 => sp                     // allocate space for local variables (4 bytes)
-  loadI 3 => r2
-  storeAI r2 => [bp-4] {a}
-  loadAI [bp-4] => r3 {a}
-  loadI 10 => r4
-  cmp_LE r3, r4 => r5
-  loadI 6 => r9
-  i2i r9 => ret
-  i2i bp => sp
+  addI sp, 0 => sp                      // allocate space for local variables (0 bytes)
+  loadAI [bp+8] => r1 {x}
+  loadAI [bp+12] => r2 {y}
+  add r1, r2 => r3
+  i2i r3 => ret
+  jump l1
+l1:
+  i2i bp => sp                          // Epilogue
   pop bp
   return
 
-Result: 6
+main:
+  push bp                               // Prologue
+  i2i sp => bp
+  addI sp, -4 => sp                     // allocate space for local variables (4 bytes)
+  loadI 3 => r5
+  storeAI r5 => [bp-4] {a}
+  loadAI [bp-4] => r6 {a}
+  loadI 10 => r7
+  cmp_LT r6, r7 => r8
+  cbr r8 => l2, l3
+l2:
+  loadI 11 => r10
+  storeAI r10 => [bp-4] {a}
+l3:
+  loadI 5 => r13
+  i2i r13 => ret
+  jump l4
+l4:
+  i2i bp => sp                          // Epilogue
+  pop bp
+  return
+
+Result: 5

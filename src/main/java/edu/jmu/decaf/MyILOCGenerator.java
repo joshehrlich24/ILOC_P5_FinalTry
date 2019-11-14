@@ -29,7 +29,7 @@ public class MyILOCGenerator extends ILOCGenerator
 
         // TODO: emit epilogue
     		
-//    		addComment(node, "Epilogue");
+    		
     }
     
     public void postVisit(ASTFunctionCall node)
@@ -61,6 +61,7 @@ public class MyILOCGenerator extends ILOCGenerator
     		emit(node, ILOCInstruction.Form.ADD_I, ILOCOperand.REG_SP, ILOCOperand.newIntConstant(offset), ILOCOperand.REG_SP);
     		emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_RET, returnReg);
     		
+    		
     		setTempReg(node, returnReg);
     		
     		
@@ -87,21 +88,25 @@ public class MyILOCGenerator extends ILOCGenerator
     		emit(node, ILOCInstruction.Form.I2I, getTempReg(node.value), ILOCOperand.REG_RET);
     	}
     	
+    	ILOCOperand label = ILOCOperand.newAnonymousLabel();
+    	
     	// TODO: emit epilogue
-    	 addComment(node, "Epilogue");
-    	 emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_BP, ILOCOperand.REG_SP);
-	     emit(node, ILOCInstruction.Form.POP, ILOCOperand.REG_BP);
-	     emit(node, ILOCInstruction.Form.RETURN);
+    	
+    	emit(node, ILOCInstruction.Form.JUMP, label); //This could be wrong
+    	emit(node, ILOCInstruction.Form.LABEL, label);
+    	
+    	
+    	emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_BP, ILOCOperand.REG_SP);
+    	addComment(node, "Epilogue");
+	    emit(node, ILOCInstruction.Form.POP, ILOCOperand.REG_BP);
+	    emit(node, ILOCInstruction.Form.RETURN);
     }
     
     @Override 
     public void postVisit(ASTLocation loc)
     {	
-    	//System.out.println("Location " + getCode(loc));
-    	
     	ILOCOperand reg = emitLoad(loc);
-    	setTempReg(loc, reg);	
-    	
+    	setTempReg(loc, reg);	   	
     }
     
     public void postVisit(ASTLiteral node)
@@ -135,7 +140,7 @@ public class MyILOCGenerator extends ILOCGenerator
     
     public void postVisit(ASTAssignment node)
     {
-    	System.out.println("Assignment node --> " + getCode(node));
+    	//System.out.println("Assignment node --> " + getCode(node));
     	ILOCOperand reg = getTempReg(node.value); // get the value of the assignment
     	
     	setTempReg(node.value, reg);
@@ -143,7 +148,7 @@ public class MyILOCGenerator extends ILOCGenerator
     	copyCode(node, node.value);
     	
     	
-    	System.out.println("Assignment node After copy --> " + getCode(node));
+    	//System.out.println("Assignment node After copy --> " + getCode(node));
     	
     	emitStore(node, reg); 
     }
@@ -224,8 +229,8 @@ public class MyILOCGenerator extends ILOCGenerator
     	ILOCOperand destReg = ILOCOperand.newVirtualReg();
     	
     	
-    	System.out.println("UnaryExpr child -->" + getCode(node.child));
-    	System.out.println("UnaryExpression node --> " + getCode(node));
+    	//System.out.println("UnaryExpr child -->" + getCode(node.child));
+    	//System.out.println("UnaryExpression node --> " + getCode(node));
     	
     	
     	
@@ -245,7 +250,7 @@ public class MyILOCGenerator extends ILOCGenerator
 		default:
 			break;
     	}
-    	System.out.println("UnaryExpression node after negation --> " + getCode(node));
+    	//System.out.println("UnaryExpression node after negation --> " + getCode(node));
     	
     	//copyCode(node.getParent(), node);
     	
@@ -254,13 +259,39 @@ public class MyILOCGenerator extends ILOCGenerator
     
     public void postVisit(ASTConditional node)
     {
-    	emit(node, ILOCInstruction.Form.LABEL, ILOCOperand.newAnonymousLabel());
+    	//emit(node, ILOCInstruction.Form.LABEL, ILOCOperand.newAnonymousLabel());
     	
     	copyCode(node, node.condition);
     	
-    	emit(node, ILOCInstruction.Form.LABEL, ILOCOperand.newAnonymousLabel());
-    }
-    
-    
+    	ILOCOperand label1 = ILOCOperand.newAnonymousLabel();
+    	ILOCOperand label2 = ILOCOperand.newAnonymousLabel();
+    	ILOCOperand label3 = ILOCOperand.newAnonymousLabel();
+    	
+    	
+    	emit(node, ILOCInstruction.Form.CBR, getTempReg(node.condition), label1, label2);
+    	emit(node, ILOCInstruction.Form.LABEL, label1);
+    	
+    	
+    	copyCode(node, node.ifBlock);
+    	emit(node, ILOCInstruction.Form.JUMP, label3); //This could be wrong
+    	
+    	
+    	
+    	emit(node, ILOCInstruction.Form.LABEL, label2);
+    	
+    	
+    	
+    	
+    	 if(node.hasElseBlock())
+    	 {
+    		 
+    		 if(node.elseBlock.statements.size() > 0)
+    		 {
+    			copyCode(node, node.elseBlock); 
+    			emit(node, ILOCInstruction.Form.LABEL, label3);	
+    		 }
+    	 }
+    	
 
+    }
 }

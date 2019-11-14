@@ -1,22 +1,39 @@
+add:
+  push bp                               // prologue
+  i2i sp => bp
+  addI sp, 0 => sp                      // allocate space for local variables (0 bytes)
+  loadAI [bp+8] => r1 {x}
+  loadAI [bp+12] => r2 {y}
+  add r1, r2 => r3
+  i2i r3 => ret
+  jump l1                               // return (x+y)
+l1:
+  i2i bp => sp                          // epilogue
+  pop bp
+  return
+
 main:
   push bp                               // prologue
   i2i sp => bp
   addI sp, -4 => sp                     // allocate space for local variables (4 bytes)
-  loadI 3 => r1
-  storeAI r1 => [bp-4] {a}              // a = 3
-  loadAI [bp-4] => r2 {a}
-  loadI 10 => r3
-  cmp_LE r2, r3 => r4
-  cbr r4 => l1, l2
-l1:                                     // if (a<=10)
-  loadI 14 => r5
-  neg r5 => r6
-  storeAI r6 => [bp-4] {a}              // a = (-14)
-l2:
-  loadI 6 => r7
-  i2i r7 => ret
-  jump l3                               // return 6
-l3:
+  loadI 3 => r4
+  storeAI r4 => [bp-4] {a}              // a = 3
+  loadAI [bp-4] => r5 {a}
+  loadI 10 => r6
+  cmp_LT r5, r6 => r7
+  cbr r7 => l2, l3
+l2:                                     // if (a<10)
+  loadI 11 => r8
+  storeAI r8 => [bp-4] {a}              // a = 11
+  jump l4
+l3:                                     // else
+  loadI 25 => r9
+  storeAI r9 => [bp-4] {a}              // a = 25
+l4:
+  loadI 5 => r10
+  i2i r10 => ret
+  jump l5                               // return 5
+l5:
   i2i bp => sp                          // epilogue
   pop bp
   return
