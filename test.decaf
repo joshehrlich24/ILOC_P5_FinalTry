@@ -6,19 +6,12 @@ def int add(int x, int y)
 def int main()
 {
     int a;
-    a = 3;
+    a = 10;
    
-   if(a < 10)
+   if(a > 0)
    {
-   		a = 11;
-   }
-   else
-   {
-   		a = 14;
+   		a = -10;
    }
 
-   
-  
-   
    return 5;
 }

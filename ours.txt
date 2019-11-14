@@ -16,22 +16,22 @@ main:
   push bp                               // Prologue
   i2i sp => bp
   addI sp, -4 => sp                     // allocate space for local variables (4 bytes)
-  loadI 3 => r5
+  loadI 10 => r5
   storeAI r5 => [bp-4] {a}
   loadAI [bp-4] => r6 {a}
-  loadI 10 => r7
-  cmp_LT r6, r7 => r8
+  loadI 0 => r7
+  cmp_GT r6, r7 => r8
   cbr r8 => l2, l3
 l2:
-  loadI 11 => r10
-  storeAI r10 => [bp-4] {a}
-l3:
-  loadI 5 => r13
-  i2i r13 => ret
+  loadI 10 => r10
+  neg r10 => r11
+  storeAI r11 => [bp-4] {a}
   jump l4
-l4:
+l3:
+  loadI 5 => r12
+  i2i r12 => ret
+  jump l5
+l5:
   i2i bp => sp                          // Epilogue
   pop bp
   return
-
-Result: 5

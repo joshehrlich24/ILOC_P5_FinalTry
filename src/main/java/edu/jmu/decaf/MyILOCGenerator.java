@@ -228,13 +228,6 @@ public class MyILOCGenerator extends ILOCGenerator
     	ILOCOperand childReg = getTempReg(node.child);
     	ILOCOperand destReg = ILOCOperand.newVirtualReg();
     	
-    	
-    	//System.out.println("UnaryExpr child -->" + getCode(node.child));
-    	//System.out.println("UnaryExpression node --> " + getCode(node));
-    	
-    	
-    	
-    	
     	copyCode(node, node.child);
     	
     	switch(node.operator)
@@ -247,7 +240,8 @@ public class MyILOCGenerator extends ILOCGenerator
     			
     			emit(node, ILOCInstruction.Form.NEG, childReg, destReg);
     			break;
-		default:
+    		case INVALID:
+    			
 			break;
     	}
     	//System.out.println("UnaryExpression node after negation --> " + getCode(node));
@@ -259,7 +253,6 @@ public class MyILOCGenerator extends ILOCGenerator
     
     public void postVisit(ASTConditional node)
     {
-    	//emit(node, ILOCInstruction.Form.LABEL, ILOCOperand.newAnonymousLabel());
     	
     	copyCode(node, node.condition);
     	
@@ -273,7 +266,12 @@ public class MyILOCGenerator extends ILOCGenerator
     	
     	
     	copyCode(node, node.ifBlock);
-    	emit(node, ILOCInstruction.Form.JUMP, label3); //This could be wrong
+    	
+    	if(node.hasElseBlock())
+    	{
+    		emit(node, ILOCInstruction.Form.JUMP, label3); //This could be wrong
+    	}
+    
     	
     	
     	
@@ -293,5 +291,27 @@ public class MyILOCGenerator extends ILOCGenerator
     	 }
     	
 
+    }
+    
+    public void postVisit(ASTWhileLoop node)
+    {
+    	ILOCOperand label1 = ILOCOperand.newAnonymousLabel();
+    	ILOCOperand label2 = ILOCOperand.newAnonymousLabel();
+    	ILOCOperand label3 = ILOCOperand.newAnonymousLabel();
+    	
+    	emit(node, ILOCInstruction.Form.LABEL, label1);
+    	copyCode(node, node.guard);
+
+    	emit(node, ILOCInstruction.Form.CBR, getTempReg(node.guard), label2, label3);
+
+    	emit(node, ILOCInstruction.Form.LABEL, label2);
+    	copyCode(node, node.body);
+    	emit(node, ILOCInstruction.Form.JUMP, label1); //This could be wrong
+    	emit(node, ILOCInstruction.Form.LABEL, label3);
+
+
+    	
+
+    
     }
 }
