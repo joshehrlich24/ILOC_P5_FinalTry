@@ -1,3 +1,4 @@
+Hello
 add:
   push bp                               // Prologue
   i2i sp => bp
@@ -15,23 +16,41 @@ l1:
 main:
   push bp                               // Prologue
   i2i sp => bp
-  addI sp, -4 => sp                     // allocate space for local variables (4 bytes)
+  addI sp, -8 => sp                     // allocate space for local variables (8 bytes)
   loadI 10 => r5
   storeAI r5 => [bp-4] {a}
-  loadAI [bp-4] => r6 {a}
-  loadI 0 => r7
-  cmp_GT r6, r7 => r8
-  cbr r8 => l2, l3
-l2:
-  loadI 10 => r10
-  neg r10 => r11
-  storeAI r11 => [bp-4] {a}
-  jump l4
-l3:
-  loadI 5 => r12
+  loadI 10 => r7
+  storeAI r7 => [bp-8] {b}
+  loadAI [bp-8] => r8 {b}
+  push r8
+  call voidCall
+  addI sp, 4 => sp
+  i2i ret => r9
+  loadAI [bp-4] => r10 {a}
+  loadAI [bp-8] => r11 {b}
+  push r11
+  push r10
+  call add
+  addI sp, 8 => sp
+  i2i ret => r12
   i2i r12 => ret
-  jump l5
-l5:
+  jump l2
+l2:
   i2i bp => sp                          // Epilogue
   pop bp
   return
+
+voidCall:
+  push bp                               // Prologue
+  i2i sp => bp
+  addI sp, 0 => sp                      // allocate space for local variables (0 bytes)
+  loadAI [bp+8] => r16 {a}
+  loadI 6 => r17
+  mult r16, r17 => r18
+  storeAI r18 => [bp+8] {a}
+l3:
+  i2i bp => sp                          // Epilogue
+  pop bp
+  return
+
+Result: 20

@@ -6,12 +6,20 @@ def int add(int x, int y)
 def int main()
 {
     int a;
+    int b;
     a = 10;
+    b = 10;
+    
+    voidCall(b);
+    
    
-   if(a > 0)
-   {
-   		a = -10;
-   }
+  
 
-   return 5;
+   return add(a,b);
+}
+
+def void voidCall(int a)
+{
+	a = a * 6;
+	
 }

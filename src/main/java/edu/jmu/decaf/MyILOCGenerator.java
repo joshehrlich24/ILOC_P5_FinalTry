@@ -2,6 +2,8 @@ package edu.jmu.decaf;
 
 import java.util.*;
 
+import edu.jmu.decaf.ASTNode.DataType;
+
 
 /**
  * Concrete ILOC generator class.
@@ -13,7 +15,7 @@ public class MyILOCGenerator extends ILOCGenerator
     {
     }
 
-    @Override
+    @Override 
     public void postVisit(ASTFunction node)
     {
         // TODO: emit prologue
@@ -28,8 +30,19 @@ public class MyILOCGenerator extends ILOCGenerator
     		copyCode(node, node.body);
 
         // TODO: emit epilogue
-    		
-    		
+    		if(node.returnType == DataType.VOID)
+    		{
+    			ILOCOperand label = ILOCOperand.newAnonymousLabel();
+    			System.out.println("Hello");
+    			//emit(node, ILOCInstruction.Form.JUMP, label); //This could be wrong
+    	    	emit(node, ILOCInstruction.Form.LABEL, label);
+    	    	
+    	    	
+    	    	emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_BP, ILOCOperand.REG_SP);
+    	    	addComment(node, "Epilogue");
+    		    emit(node, ILOCInstruction.Form.POP, ILOCOperand.REG_BP);
+    		    emit(node, ILOCInstruction.Form.RETURN);
+    		}
     }
     
     public void postVisit(ASTFunctionCall node)
@@ -121,20 +134,21 @@ public class MyILOCGenerator extends ILOCGenerator
 				break;
 			
 			case BOOL:
-				//Something else
+				if(node.value.toString().equals("true"))
+				{
+					emit(node, ILOCInstruction.Form.LOAD_I, ILOCOperand.newIntConstant(1), destReg);
+				}
+				else if(node.value.toString().equals("false"))
+				{
+					emit(node, ILOCInstruction.Form.LOAD_I, ILOCOperand.newIntConstant(0), destReg);
+				}
 				break;
 
 			default:
 				break;
     	}
-    	
-    	
+  
     	setTempReg(node, destReg);
-    	
-    	if(!node.getParent().getASTTypeStr().equals("Return"))
-    	{
-    		//copyCode(node.getParent(), node);		
-    	}
     	
     }
     
@@ -258,7 +272,7 @@ public class MyILOCGenerator extends ILOCGenerator
     	
     	ILOCOperand label1 = ILOCOperand.newAnonymousLabel();
     	ILOCOperand label2 = ILOCOperand.newAnonymousLabel();
-    	ILOCOperand label3 = ILOCOperand.newAnonymousLabel();
+
     	
     	
     	emit(node, ILOCInstruction.Form.CBR, getTempReg(node.condition), label1, label2);
@@ -267,30 +281,22 @@ public class MyILOCGenerator extends ILOCGenerator
     	
     	copyCode(node, node.ifBlock);
     	
-    	if(node.hasElseBlock())
+    	if(!node.hasElseBlock())
     	{
-    		emit(node, ILOCInstruction.Form.JUMP, label3); //This could be wrong
+        	emit(node, ILOCInstruction.Form.LABEL, label2);
+
     	}
-    
-    	
-    	
-    	
-    	emit(node, ILOCInstruction.Form.LABEL, label2);
-    	
-    	
-    	
-    	
-    	 if(node.hasElseBlock())
-    	 {
-    		 
+    	else 
+    	{
+    		 ILOCOperand label3 = ILOCOperand.newAnonymousLabel();
+     		 emit(node, ILOCInstruction.Form.JUMP, label3); //This could be wrong
+         	 emit(node, ILOCInstruction.Form.LABEL, label2);
     		 if(node.elseBlock.statements.size() > 0)
     		 {
     			copyCode(node, node.elseBlock); 
     			emit(node, ILOCInstruction.Form.LABEL, label3);	
     		 }
     	 }
-    	
-
     }
     
     public void postVisit(ASTWhileLoop node)
@@ -307,11 +313,60 @@ public class MyILOCGenerator extends ILOCGenerator
     	emit(node, ILOCInstruction.Form.LABEL, label2);
     	copyCode(node, node.body);
     	emit(node, ILOCInstruction.Form.JUMP, label1); //This could be wrong
-    	emit(node, ILOCInstruction.Form.LABEL, label3);
-
-
-    	
-
+    	emit(node, ILOCInstruction.Form.LABEL, label3);    
+    }
     
+    public void postVisit(ASTVoidFunctionCall node) 
+    {
+    	int numberOfArgs = node.arguments.size();
+    	int offset = numberOfArgs * 4;
+    	ILOCOperand returnReg = ILOCOperand.newVirtualReg();
+    	
+    	
+    	
+    	
+    	if(node.name.equals("print_str"))
+    	{
+    		ASTLiteral lit = (ASTLiteral) node.arguments.get(0);
+    		String str = lit.value.toString();
+    		emit(node, ILOCInstruction.Form.PRINT, ILOCOperand.newStrConstant(str)); // emit the print instruction 
+    	}
+    	else if(node.name.equals("print_int") || node.name.equals("print_bool"))
+    	{
+    		ASTLiteral lit = (ASTLiteral) node.arguments.get(0);
+    		copyCode(node, lit);
+    		emit(node, ILOCInstruction.Form.PRINT, getTempReg(lit));
+    	}
+    	else
+    	{
+    		
+    		for(int i = 0; i < node.arguments.size(); i ++)
+    		{
+    			copyCode(node, node.arguments.get(i));
+    			
+    			for(int j = numberOfArgs - 1; j >= 0; j --) // Loop through arguments in reverse order and push them onto the stack
+        		{
+    				
+        			ILOCOperand temp = getTempReg(node.arguments.get(j));
+        			emit(node, ILOCInstruction.Form.PUSH, temp);
+        		}
+    			
+    			emit(node, ILOCInstruction.Form.CALL, ILOCOperand.newCallLabel(node.name));
+    			emit(node, ILOCInstruction.Form.ADD_I, ILOCOperand.REG_SP, ILOCOperand.newIntConstant(offset), ILOCOperand.REG_SP);
+    			emit(node, ILOCInstruction.Form.I2I, ILOCOperand.REG_RET, returnReg);
+    		}
+    	}
+    	setTempReg(node, returnReg);
+    }
+    
+    
+    public void postVisit(ASTBreak node)
+    {
+    	
+    }
+    
+    public void postVisit(ASTContinue node)
+    {
+    	
     }
 }
